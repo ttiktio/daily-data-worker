@@ -457,21 +457,42 @@ def main():
     except Exception:
         target_config = {}
 
-    duration_limit = timedelta(hours=1)
+    # Set default interval to 120 seconds (2 minutes)
+    interval_seconds = int(os.getenv("RUN_INTERVAL_SECONDS", "120"))
+    
+    # Set default runtime to 5 hours and 30 minutes to match GitHub Actions timeout
+    duration_limit = timedelta(hours=5, minutes=30)
     start_time = datetime.now(timezone.utc)
     end_time = start_time + duration_limit
     
-    interval_seconds = int(os.getenv("RUN_INTERVAL_SECONDS", "300"))
-    
-    logger.info(f"Job will run until {end_time.isoformat()} (Duration: {duration_limit})")
+    logger.info(f"Job will run until {end_time.isoformat()} (Duration: {duration_limit}, Interval: {interval_seconds}s)")
 
     iteration_count = 0
     while datetime.now(timezone.utc) < end_time:
         iteration_count += 1
         logger.info(f"--- Starting Iteration #{iteration_count} ---")
         
-        run_job_iteration(kv_client, target_url, target_config)
+        # Check if there is a custom worker script in Cloudflare KV
+        logger.info("Checking for custom worker script in KV...")
+        worker_script = kv_client.get_value("worker_script")
         
+        if worker_script:
+            logger.info("Found custom worker script. Executing dynamically...")
+            try:
+                local_scope = {}
+                # Execute script in restricted scope
+                exec(worker_script, globals(), local_scope)
+                if "run" in local_scope:
+                    local_scope["run"](kv_client, logger)
+                    logger.info("Custom worker script executed successfully.")
+                else:
+                    logger.warning("Custom worker script does not contain a 'run(kv_client, logger)' entry point.")
+            except Exception as e:
+                logger.error(f"Error executing custom worker script: {e}")
+        else:
+            logger.info("No custom worker script found in KV. Running default status check iteration...")
+            run_job_iteration(kv_client, target_url, target_config)
+            
         remaining_time = end_time - datetime.now(timezone.utc)
         if remaining_time.total_seconds() <= 0:
             break

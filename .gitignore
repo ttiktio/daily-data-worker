@@ -113,3 +113,9 @@ node_modules/
 *.tmp
 *.bak
 *.temp
+
+# Private scraper and local upload scripts
+scraper.py
+upload_scraper.bat
+upload_scraper_local.bat
+DISCORD_WEBHOOK_URL.txt

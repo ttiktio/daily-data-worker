@@ -773,6 +773,92 @@ function serveDashboardPage(latest, history, lastUpdate, hasGithub, ghOwner, ghR
     `;
   }
 
+  // Dynamic Extracted Data Feed rendering
+  let extractedFeedHtml = "";
+  if (latest && latest.metrics && latest.metrics.extracted) {
+    const extracted = latest.metrics.extracted;
+    // Look for any array in extracted
+    let dataArray = null;
+    let dataKeyName = "";
+    for (const key in extracted) {
+      if (Array.isArray(extracted[key])) {
+        dataArray = extracted[key];
+        dataKeyName = key;
+        break;
+      }
+    }
+    
+    if (dataArray && dataArray.length > 0) {
+      extractedFeedHtml += `
+        <div class="glass-card feed-card" style="padding: 28px 24px; margin-bottom: 24px;">
+          <div class="feed-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; margin: 0;">
+              <svg style="width:18px;height:18px;color:var(--color-primary);stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              Latest Synced Data Feed (${dataKeyName})
+            </h3>
+            <span style="font-size: 12px; color: var(--text-secondary); background: rgba(99, 102, 241, 0.1); padding: 4px 8px; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.2); font-weight: 600;">
+              ${dataArray.length} items
+            </span>
+          </div>
+          <div class="feed-items" style="display:flex; flex-direction:column; gap:16px; max-height: 500px; overflow-y: auto; padding-right: 8px;">
+      `;
+      
+      dataArray.forEach(item => {
+        const title = item.title || item.name || item.headline || item.text || "Untitled Item";
+        const link = item.link || item.url || item.href;
+        const meta = item.meta || item.description || item.details || "";
+        const image = item.image || item.img || item.thumbnail;
+        const impact = item.impact || item.level || item.importance || item.type;
+        
+        let impactBadge = "";
+        if (impact) {
+          let badgeStyle = "background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1);";
+          if (typeof impact === 'string') {
+            const impLower = impact.toLowerCase();
+            if (impLower === 'high' || impLower === 'red' || impLower === 'critical') {
+              badgeStyle = "background: rgba(239, 68, 68, 0.15); color: var(--color-error); border: 1px solid rgba(239, 68, 68, 0.25);";
+            } else if (impLower === 'medium' || impLower === 'orange' || impLower === 'warning') {
+              badgeStyle = "background: rgba(245, 158, 11, 0.15); color: var(--color-warning); border: 1px solid rgba(245, 158, 11, 0.25);";
+            } else if (impLower === 'low' || impLower === 'yellow' || impLower === 'info') {
+              badgeStyle = "background: rgba(16, 185, 129, 0.15); color: var(--color-success); border: 1px solid rgba(16, 185, 129, 0.25);";
+            }
+          }
+          impactBadge = `<span class="badge" style="${badgeStyle}">${impact}</span>`;
+        }
+        
+        extractedFeedHtml += `
+          <div class="feed-item" style="background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; display: flex; gap: 16px; transition: all 0.2s; position: relative;">
+            ${image ? `
+              <div class="feed-item-img-container" style="width: 80px; height: 80px; flex-shrink: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);">
+                <img src="${image}" style="width: 100%; height: 100%; object-fit: cover;" alt="item thumbnail">
+              </div>
+            ` : ""}
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;">
+                <h4 style="font-size: 14px; font-weight: 700; color: #fff; line-height: 1.4; margin: 0; text-align: left;">
+                  ${link ? `<a href="${link}" target="_blank" style="color: #fff; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='var(--color-primary)'" onmouseout="this.style.color='#fff'">${title}</a>` : title}
+                </h4>
+                ${impactBadge}
+              </div>
+              ${meta ? `<p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin: 0; text-align: left;">${meta}</p>` : ""}
+            </div>
+          </div>
+        `;
+      });
+      
+      extractedFeedHtml += `
+          </div>
+        </div>
+      `;
+    }
+  }
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1202,6 +1288,30 @@ function serveDashboardPage(latest, history, lastUpdate, hasGithub, ghOwner, ghR
       transform: translateY(0);
     }
 
+    /* Feed card custom styles */
+    .feed-items::-webkit-scrollbar {
+      width: 6px;
+    }
+    .feed-items::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .feed-items::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+    .feed-items::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .feed-item {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    .feed-item:hover {
+      background: rgba(255, 255, 255, 0.02) !important;
+      border-color: rgba(99, 102, 241, 0.25) !important;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    }
+
     /* Mobile Responsive design */
     @media (max-width: 768px) {
       .dashboard-grid {
@@ -1319,6 +1429,8 @@ function serveDashboardPage(latest, history, lastUpdate, hasGithub, ghOwner, ghR
         </div>
       </div>
     </div>
+
+    ${extractedFeedHtml}
 
     <!-- GitHub Trigger Section -->
     <div class="info-banner-card glass-card">

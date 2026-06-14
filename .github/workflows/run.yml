@@ -2,8 +2,8 @@ name: Scheduled Data Sync Worker
 
 on:
   schedule:
-    # Run daily at 00:00 UTC
-    - cron: '0 0 * * *'
+    # Run every 5 hours to maintain continuous coverage
+    - cron: '0 */5 * * *'
   workflow_dispatch:
     # Allows manual trigger from the GitHub Actions tab
 
@@ -11,7 +11,7 @@ jobs:
   run-sync:
     name: Execute Data Sync
     runs-on: ubuntu-latest
-    timeout-minutes: 80 # Enough for 1 hour + overhead
+    timeout-minutes: 360 # Run for up to 6 hours to cover the 5.5-hour execution loop
 
     steps:
       - name: Checkout repository
@@ -35,5 +35,5 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_KV_NAMESPACE_ID: ${{ secrets.CLOUDFLARE_KV_NAMESPACE_ID }}
-          RUN_INTERVAL_SECONDS: 60 # Run every 1 minute
+          RUN_INTERVAL_SECONDS: 120 # Run every 2 minutes
         run: python src/main.py
