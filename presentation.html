@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Roadmap: Public GitHub Actions + Private Access</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --accent: #f59e0b;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--dark);
+            color: var(--light);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .slide-container {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide {
+            min-width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem;
+            position: relative;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+
+        .slide-content {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            border-left: 8px solid var(--primary);
+            padding-left: 1.5rem;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: var(--accent);
+        }
+
+        p {
+            font-size: 1.25rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            color: #cbd5e1;
+        }
+
+        ul {
+            list-style: none;
+            margin-top: 2rem;
+        }
+
+        li {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        li::before {
+            content: "→";
+            margin-right: 1rem;
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .phase-badge {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 1rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+            backdrop-filter: blur(4px);
+        }
+
+        button:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: var(--primary);
+            transition: width 0.3s;
+            z-index: 101;
+        }
+
+        .step-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 1rem;
+        }
+
+        .code-block {
+            background: #000;
+            color: #10b981;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .intro-title {
+            text-align: center;
+        }
+        
+        .intro-title h1 {
+            border: none;
+            padding: 0;
+            font-size: 4rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="slide-container" id="slideContainer">
+        <!-- Slide 0: Intro -->
+        <section class="slide">
+            <div class="slide-content intro-title">
+                <div class="phase-badge">ROADMAP 2026</div>
+                <h1>สิ่งที่ต้องทำต่อ</h1>
+                <h2 style="color: var(--light)">Public GitHub Actions + Private Access</h2>
+                <p>แผนการสร้างระบบ Automate ที่ปลอดภัย โดยใช้ Public Repo เป็นเครื่องจักรหลัก</p>
+                <div style="margin-top: 3rem; color: var(--secondary)">กดลูกศร หรือคลิกปุ่มด้านล่างเพื่อเริ่ม</div>
+            </div>
+        </section>
+
+        <!-- Slide 1: Core Strategy -->
+        <section class="slide">
+            <div class="slide-content">
+                <h2>ยุทธศาสตร์หลัก (Core Strategy)</h2>
+                <div class="step-card">
+                    <p><strong>Public Repo = เครื่องยนต์ (The Engine)</strong><br>รัน Workflow, Scraper, Sync ข้อมูล</p>
+                    <p><strong>Private Cloudflare = คลังแสง (The Vault)</strong><br>เก็บข้อมูลจริง (KV/D1) และด่านหน้าตรวจสิทธิ์ (Access)</p>
+                    <p><strong>GitHub Secrets = กุญแจ (The Keys)</strong><br>เก็บรหัสและ URL ลับห้ามให้ใครเห็น</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 2: Phase 1 -->
+        <section class="slide">
+            <div class="slide-content">
+                <div class="phase-badge">Phase 1 (Start Here)</div>
+                <h2>เซ็ตอัพ Public Repo พื้นฐาน</h2>
+                <ul>
+                    <li>สร้าง Public Repository ชื่อกลางๆ (เช่น <code>utility-worker</code>)</li>
+                    <li>ตั้งค่า GitHub Secrets (TARGET_URL, API_TOKEN)</li>
+                    <li>เขียน Python Workflow รันแบบ Manual (workflow_dispatch)</li>
+                    <li>ทดสอบรันให้ผ่าน โดยไม่มี Secret หลุดใน Log</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Slide 3: Phase 2 -->
+        <section class="slide">
+            <div class="slide-content">
+                <div class="phase-badge">Phase 2</div>
+                <h2>เชื่อมต่อ Cloudflare Storage</h2>
+                <ul>
+                    <li>สร้าง Cloudflare KV หรือ D1 สำหรับเก็บผลลัพธ์</li>
+                    <li>เขียนโค้ดให้ GitHub Actions ส่งข้อมูลไปเก็บที่ Cloudflare</li>
+                    <li><strong>เป้าหมาย:</strong> ข้อมูลจริงไม่ถูก commit ลง repo เด็ดขาด</li>
+                </ul>
+                <div class="code-block">
+                    # ตัวอย่าง flow<br>
+                    Scrape Data -> Process -> Update Cloudflare KV
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 4: Phase 3 & 4 -->
+        <section class="slide">
+            <div class="slide-content">
+                <div class="phase-badge">Phase 3 & 4</div>
+                <h2>API และการป้องกัน (Security Gate)</h2>
+                <ul>
+                    <li>สร้าง Cloudflare Worker เพื่อดึงข้อมูลมาแสดงผล</li>
+                    <li><strong>สำคัญที่สุด:</strong> ตั้งค่า Cloudflare Access</li>
+                    <li>อนุญาตเฉพาะอีเมลเจ้าของ (OTP Login)</li>
+                </ul>
+                <div class="step-card" style="border-left: 5px solid var(--accent)">
+                    "ปลอดภัยที่สุดคือไม่ต้องเขียนระบบ Login เอง แต่ใช้ Cloudflare Access เป็นด่านหน้า"
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 5: Final Check -->
+        <section class="slide">
+            <div class="slide-content">
+                <div class="phase-badge">Phase 5</div>
+                <h2>Hardening & Verification</h2>
+                <ul>
+                    <li>ลบประวัติ Log และ Artifact เก่าๆ</li>
+                    <li>ตั้ง Rate Limit ป้องกันการยิง API</li>
+                    <li>ตรวจสอบว่า Repo Public ไม่มีชื่อเว็บเป้าหมายหลุดออกมา</li>
+                </ul>
+                <h2>Success Criteria</h2>
+                <p>✅ Repo เป็น Public แต่ข้อมูลยังเป็นความลับ 100%<br>✅ มีแค่เราที่เปิดหน้าเว็บผลลัพธ์ได้</p>
+            </div>
+        </section>
+
+        <!-- Slide 6: Interactive Simulation -->
+        <section class="slide">
+            <div class="slide-content">
+                <div class="phase-badge">Live Simulation</div>
+                <h2>ตัวอย่างการทำงาน (Demo)</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem;">
+                    <!-- Calculator -->
+                    <div class="step-card">
+                        <h3>เครื่องคิดเลขจำลอง</h3>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem;">
+                            <input type="number" id="calcA" placeholder="เลขตัวที่ 1" style="padding: 0.5rem; border-radius: 4px; border: none;">
+                            <input type="number" id="calcB" placeholder="เลขตัวที่ 2" style="padding: 0.5rem; border-radius: 4px; border: none;">
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button onclick="calculate('+')" style="flex: 1; padding: 0.5rem;">+</button>
+                                <button onclick="calculate('-')" style="flex: 1; padding: 0.5rem;">-</button>
+                                <button onclick="calculate('*')" style="flex: 1; padding: 0.5rem;">×</button>
+                                <button onclick="calculate('/')" style="flex: 1; padding: 0.5rem;">÷</button>
+                            </div>
+                            <div id="calcResult" style="font-size: 1.5rem; font-weight: bold; color: var(--accent); margin-top: 0.5rem; text-align: center;">ผลลัพธ์: -</div>
+                        </div>
+                    </div>
+
+                    <!-- Thai Time API -->
+                    <div class="step-card">
+                        <h3>เวลาประเทศไทย (Live API)</h3>
+                        <div style="text-align: center; margin-top: 1rem;">
+                            <div id="thaiTime" style="font-size: 2rem; font-weight: bold; color: var(--success);">กำลังโหลด...</div>
+                            <div id="thaiDate" style="color: var(--secondary); margin-top: 0.5rem;">-</div>
+                            <button onclick="fetchThaiTime()" style="margin-top: 1rem; width: 100%;">อัปเดตเวลา</button>
+                        </div>
+                    </div>
+                </div>
+                <p style="margin-top: 1.5rem; font-size: 1rem; color: var(--secondary);">* นี่คือตัวอย่างการดึงข้อมูลและประมวลผลที่จะเกิดขึ้นในระบบจริง</p>
+            </div>
+        </section>
+
+        <!-- Slide 7: Action Plan -->
+        <section class="slide">
+            <div class="slide-content" style="text-align: center;">
+                <h1>เริ่มลงมือได้เลย!</h1>
+                <h2 style="margin-top: 2rem;">เริ่มที่ Phase 1: สร้าง Repo และ Secrets</h2>
+                <p style="margin-top: 2rem;">หากพร้อมแล้ว บอกฉันให้ช่วยเขียนไฟล์แรกได้ทันที</p>
+            </div>
+        </section>
+    </div>
+
+    <div class="controls">
+        <button id="prevBtn">← Previous</button>
+        <button id="nextBtn">Next →</button>
+    </div>
+
+    <script>
+        const container = id => document.getElementById(id);
+        const slideContainer = container('slideContainer');
+        const nextBtn = container('nextBtn');
+        const prevBtn = container('prevBtn');
+        const progressBar = container('progressBar');
+        
+        let currentSlide = 0;
+        const totalSlides = document.querySelectorAll('.slide').length;
+
+        function updateSlide() {
+            slideContainer.style.transform = `translateX(-${currentSlide * 100}vw)`;
+            progressBar.style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
+            
+            prevBtn.style.opacity = currentSlide === 0 ? '0.3' : '1';
+            nextBtn.textContent = currentSlide === totalSlides - 1 ? 'Finish' : 'Next →';
+
+            // Fetch time if we enter the demo slide
+            if (currentSlide === 6) {
+                fetchThaiTime();
+            }
+        }
+
+        // Calculator Logic
+        function calculate(op) {
+            const a = parseFloat(document.getElementById('calcA').value) || 0;
+            const b = parseFloat(document.getElementById('calcB').value) || 0;
+            let res = 0;
+            switch(op) {
+                case '+': res = a + b; break;
+                case '-': res = a - b; break;
+                case '*': res = a * b; break;
+                case '/': res = b !== 0 ? a / b : 'Error'; break;
+            }
+            document.getElementById('calcResult').textContent = `ผลลัพธ์: ${res}`;
+        }
+
+        // Thai Time API Logic
+        async function fetchThaiTime() {
+            const timeEl = document.getElementById('thaiTime');
+            const dateEl = document.getElementById('thaiDate');
+            timeEl.textContent = 'กำลังโหลด...';
+            try {
+                const response = await fetch('https://worldtimeapi.org/api/timezone/Asia/Bangkok');
+                const data = await response.json();
+                const dateTime = new Date(data.datetime);
+                timeEl.textContent = dateTime.toLocaleTimeString('th-TH');
+                dateEl.textContent = dateTime.toLocaleDateString('th-TH', { 
+                    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' 
+                });
+            } catch (error) {
+                timeEl.textContent = 'Error';
+                dateEl.textContent = 'ไม่สามารถดึงข้อมูลได้';
+            }
+        }
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextBtn.click();
+            if (e.key === 'ArrowLeft') prevBtn.click();
+        });
+
+        updateSlide();
+    </script>
+</body>
+</html>

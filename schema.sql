@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS data_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    event_name TEXT,
+    data_value TEXT
+);

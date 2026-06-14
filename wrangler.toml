@@ -1,0 +1,10 @@
+# Cloudflare D1 Configuration
+name = "utility-worker"
+main = "src/worker.py"
+compatibility_date = "2024-03-20"
+compatibility_flags = ["python_workers"]
+
+[[d1_databases]]
+binding = "DB" # ชื่อที่จะใช้เรียกในโค้ด
+database_name = "my_project_db"
+database_id = "ใส่_DATABASE_ID_ที่ได้จากคำสั่ง_create_ที่นี่"
