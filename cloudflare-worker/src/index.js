@@ -5,8 +5,8 @@ export default {
     const url = new URL(request.url);
 
     // Get configuration / secrets
-    const sessionSecret = env.SESSION_SECRET || "default_session_secret_change_in_prod";
-    const passwordHash = env.PASSWORD_HASH || "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"; // default hash of "admin"
+    const sessionSecret = (env.SESSION_SECRET || "default_session_secret_change_in_prod").trim();
+    const passwordHash = (env.PASSWORD_HASH || "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918").trim(); // default hash of "admin"
 
     // 0. Handle local KV development API (only allowed for localhost or when token is matched)
     if (url.pathname.startsWith("/api/kv/")) {
