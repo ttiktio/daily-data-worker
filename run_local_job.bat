@@ -10,7 +10,12 @@ set CLOUDFLARE_ACCOUNT_ID=local_account_mock
 set CLOUDFLARE_KV_NAMESPACE_ID=local_kv_mock
 set LOCAL_DEV_URL=http://127.0.0.1:8787
 
-venv\Scripts\python src/main.py
+python src/main.py
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo Warning: Failed using 'python'. Attempting 'py'...
+    py src/main.py
+)
 echo.
 echo Job execution completed.
 pause
