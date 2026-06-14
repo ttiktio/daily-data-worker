@@ -125,6 +125,261 @@ def main():
     # 4. Upload to Cloudflare KV
     # Write latest run
     kv_client.set_value("latest_data", report)
+
+    # 4.5 Generate and Upload Calculator Page with Live Thai Time
+    thai_time_str = "Unknown"
+    try:
+        # Request with a short timeout
+        time_res = requests.get("http://worldtimeapi.org/api/timezone/Asia/Bangkok", timeout=5)
+        if time_res.status_code == 200:
+            time_data = time_res.json()
+            thai_time_str = time_data.get("datetime", timestamp_iso)
+            # Format nicely
+            dt = datetime.fromisoformat(thai_time_str)
+            thai_time_str = dt.strftime("%Y-%m-%d %H:%M:%S") + " (Bangkok)"
+    except Exception as e:
+        logger.warning(f"Could not fetch Thai time from API: {e}")
+        # Fallback to local system time converted to Thai timezone (+7)
+        from datetime import timedelta
+        utc_now = datetime.now(timezone.utc)
+        thai_now = utc_now + timedelta(hours=7)
+        thai_time_str = thai_now.strftime("%Y-%m-%d %H:%M:%S") + " (Local +7 Fallback)"
+
+    calc_val_a = 15
+    calc_val_b = 27
+    calc_result = calc_val_a * calc_val_b
+
+    calculator_html = f"""<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Calculator - Sent by GitHub Actions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {{
+            --bg-main: #0b0f19;
+            --bg-card: rgba(22, 28, 45, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --color-primary: #6366f1;
+            --color-success: #10b981;
+        }}
+        * {{
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }}
+        body {{
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent 50%),
+                        radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05), transparent 50%);
+        }}
+        .glass-card {{
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }}
+        h2 {{
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #fff;
+            font-weight: 700;
+        }}
+        .meta-info {{
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            text-align: left;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            line-height: 1.6;
+        }}
+        .meta-val {{
+            font-weight: 600;
+            color: var(--color-success);
+            font-family: monospace;
+        }}
+        .calculator {{
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }}
+        .calc-screen {{
+            width: 100%;
+            height: 60px;
+            background-color: #090d16;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 24px;
+            text-align: right;
+            padding: 15px;
+            font-family: monospace;
+            outline: none;
+        }}
+        .calc-grid {{
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }}
+        button {{
+            padding: 14px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }}
+        button:hover {{
+            background: rgba(255, 255, 255, 0.15);
+        }}
+        button.operator {{
+            background: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+            border-color: rgba(99, 102, 241, 0.25);
+        }}
+        button.operator:hover {{
+            background: rgba(99, 102, 241, 0.3);
+        }}
+        button.equal {{
+            background: var(--color-success);
+            color: #fff;
+            grid-column: span 2;
+        }}
+        button.equal:hover {{
+            background: #059669;
+        }}
+        button.clear {{
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.25);
+        }}
+        button.clear:hover {{
+            background: rgba(239, 68, 68, 0.3);
+        }}
+        .back-link {{
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            margin-top: 15px;
+            display: inline-block;
+            transition: color 0.2s;
+        }}
+        .back-link:hover {{
+            color: #fff;
+        }}
+    </style>
+</head>
+<body>
+    <div class="glass-card">
+        <h2>🧮 เครื่องคิดเลขระบบปิด (Secure Calculator)</h2>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px;">
+            หน้านี้สร้างและส่งมาอย่างปลอดภัยโดย GitHub Actions ผ่าน Cloudflare KV
+        </p>
+
+        <div class="meta-info">
+            📌 <b>เวลาประมวลผลบน GitHub Actions:</b><br>
+            <span class="meta-val">{thai_time_str}</span><br>
+            📌 <b>ทดสอบคำนวณจาก Actions ({calc_val_a} × {calc_val_b}):</b><br>
+            <span class="meta-val">{calc_result}</span><br>
+            📌 <b>เวลาบนเบราว์เซอร์ปัจจุบัน (เรียลไทม์):</b><br>
+            <span id="live-time" class="meta-val">กำลังโหลด...</span>
+        </div>
+
+        <div class="calculator">
+            <input type="text" id="screen" class="calc-screen" readonly value="0">
+            <div class="calc-grid">
+                <button class="clear" onclick="clearScreen()">C</button>
+                <button class="operator" onclick="press('/')">÷</button>
+                <button class="operator" onclick="press('*')">×</button>
+                <button class="operator" onclick="press('-')">-</button>
+                
+                <button onclick="press('7')">7</button>
+                <button onclick="press('8')">8</button>
+                <button onclick="press('9')">9</button>
+                <button class="operator" onclick="press('+')">+</button>
+                
+                <button onclick="press('4')">4</button>
+                <button onclick="press('5')">5</button>
+                <button onclick="press('6')">6</button>
+                <button class="equal" onclick="calculate()">=</button>
+                
+                <button onclick="press('1')">1</button>
+                <button onclick="press('2')">2</button>
+                <button onclick="press('3')">3</button>
+                <button onclick="press('0')">0</button>
+            </div>
+        </div>
+        
+        <a href="/" class="back-link">← กลับไปหน้าหลัก Dashboard</a>
+    </div>
+
+    <script>
+        // Real-time Browser Time
+        function updateLiveTime() {{
+            const now = new Date();
+            document.getElementById('live-time').textContent = now.toLocaleString('th-TH');
+        }}
+        setInterval(updateLiveTime, 1000);
+        updateLiveTime();
+
+        // Calculator Logic
+        const screen = document.getElementById('screen');
+        let currentInput = '';
+
+        function press(val) {{
+            if (screen.value === '0' && !isNaN(val)) {{
+                currentInput = val;
+            }} else {{
+                currentInput += val;
+            }}
+            screen.value = currentInput;
+        }}
+
+        function clearScreen() {{
+            currentInput = '';
+            screen.value = '0';
+        }}
+
+        function calculate() {{
+            try {{
+                const result = eval(currentInput);
+                screen.value = result;
+                currentInput = String(result);
+            }} catch (e) {{
+                screen.value = 'Error';
+                currentInput = '';
+            }}
+        }}
+    </script>
+</body>
+</html>"""
+
+    kv_client.set_value("calculator_page", calculator_html)
     
     # Write to history logs (keep last 50 entries)
     history_raw = kv_client.get_value("history_data")
