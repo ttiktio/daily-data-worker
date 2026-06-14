@@ -289,9 +289,11 @@ export default {
       return serveErrorPage("KV Namespace 'DATA_KV' is not bound to this worker. Please configure bindings in wrangler.toml.");
     }
 
-    const latestDataRaw = await env.DATA_KV.get("latest_data");
-    const historyDataRaw = await env.DATA_KV.get("history_data");
-    const lastUpdate = await env.DATA_KV.get("last_update");
+    const [latestDataRaw, historyDataRaw, lastUpdate] = await Promise.all([
+      env.DATA_KV.get("latest_data"),
+      env.DATA_KV.get("history_data"),
+      env.DATA_KV.get("last_update")
+    ]);
 
     let latestData = null;
     let historyData = [];

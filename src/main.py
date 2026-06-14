@@ -467,14 +467,18 @@ def main():
     
     logger.info(f"Job will run until {end_time.isoformat()} (Duration: {duration_limit}, Interval: {interval_seconds}s)")
 
+    # Fetch custom worker script once at startup to optimize KV read quota
+    logger.info("Checking for custom worker script in KV at startup...")
+    worker_script = None
+    try:
+        worker_script = kv_client.get_value("worker_script")
+    except Exception as e:
+        logger.error(f"Failed to fetch custom worker script from KV: {e}")
+
     iteration_count = 0
     while datetime.now(timezone.utc) < end_time:
         iteration_count += 1
         logger.info(f"--- Starting Iteration #{iteration_count} ---")
-        
-        # Check if there is a custom worker script in Cloudflare KV
-        logger.info("Checking for custom worker script in KV...")
-        worker_script = kv_client.get_value("worker_script")
         
         if worker_script:
             logger.info("Found custom worker script. Executing dynamically...")
