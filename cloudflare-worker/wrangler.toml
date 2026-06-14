@@ -1,0 +1,22 @@
+name = "data-worker-dashboard"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Bindings to KV Namespace
+# Replace <NAMESPACE_ID> with the actual KV Namespace ID from Cloudflare
+[[kv_namespaces]]
+binding = "DATA_KV"
+id = "YOUR_KV_NAMESPACE_ID"
+
+[vars]
+# Default configs (override via Wrangler Secrets or Cloudflare Dashboard)
+SESSION_SECRET = "change_me_to_a_long_random_string_in_production"
+# Admin Password Hash: SHA-256 of the admin password
+# You can generate one, e.g. SHA-256 of "admin" is:
+# "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"
+PASSWORD_HASH = "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"
+
+# Optional GitHub Trigger Configurations
+GITHUB_OWNER = ""
+GITHUB_REPO = ""
+# GITHUB_PAT should be set via secret: `wrangler secret put GITHUB_PAT`
