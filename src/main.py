@@ -364,6 +364,93 @@ def main():
         target_url = "https://httpbin.org/status/200"
         
     kv_client = CloudflareKVClient(cf_account_id, cf_api_token, cf_kv_namespace_id)
+
+    # Check for pending calculation request
+    calc_req_raw = kv_client.get_value("calc_request")
+    if calc_req_raw:
+        try:
+            calc_req = json.loads(calc_req_raw)
+            if isinstance(calc_req, dict) and calc_req.get("status") == "pending":
+                logger.info(f"Found pending calculation request: {calc_req.get('expression')}")
+                expression = calc_req.get("expression")
+                
+                # Validate expression pattern
+                import re
+                clean_expr = expression.strip()
+                if not re.match(r'^[0-9+\-*/().\s]+$', clean_expr):
+                    raise ValueError("Invalid math expression. Only digits and basic operators (+,-,*,/,parentheses) allowed.")
+                
+                # Perform calculation
+                result = eval(clean_expr, {"__builtins__": None}, {})
+                
+                # Fetch Thai Time
+                thai_time_str = "Unknown"
+                timestamp_iso = datetime.now(timezone.utc).isoformat()
+                try:
+                    time_res = requests.get("http://worldtimeapi.org/api/timezone/Asia/Bangkok", timeout=5)
+                    if time_res.status_code == 200:
+                        time_data = time_res.json()
+                        dt = datetime.fromisoformat(time_data.get("datetime"))
+                        thai_time_str = dt.strftime("%Y-%m-%d %H:%M:%S") + " (Bangkok)"
+                except Exception as e:
+                    logger.warning(f"Could not fetch Thai time: {e}")
+                    utc_now = datetime.now(timezone.utc)
+                    thai_now = utc_now + timedelta(hours=7)
+                    thai_time_str = thai_now.strftime("%Y-%m-%d %H:%M:%S") + " (Local +7 Fallback)"
+
+                # Save calculation result
+                calc_result = {
+                    "expression": expression,
+                    "result": str(result),
+                    "thai_time": thai_time_str,
+                    "calculated_at": timestamp_iso
+                }
+                kv_client.set_value("calc_result", calc_result)
+                
+                # Update request status to completed
+                calc_req["status"] = "completed"
+                kv_client.set_value("calc_request", calc_req)
+                logger.info(f"Successfully calculated: {expression} = {result}. Results updated.")
+                
+                # Also save to generic history log
+                report = {
+                    "timestamp": timestamp_iso,
+                    "status": "success",
+                    "url_masked": "Math Calculation",
+                    "response_time_ms": 0,
+                    "metrics": {
+                        "status_code": 200,
+                        "content_length": 0,
+                        "extracted": {"calculation": calc_result}
+                    },
+                    "message": f"Calculated: {expression} = {result}"
+                }
+                kv_client.set_value("latest_data", report)
+                
+                # Update history list
+                history_raw = kv_client.get_value("history_data")
+                history = []
+                if history_raw:
+                    try:
+                        history = json.loads(history_raw)
+                        if not isinstance(history, list): history = []
+                    except Exception: history = []
+                history.insert(0, report)
+                history = history[:50]
+                kv_client.set_value("history_data", history)
+                kv_client.set_value("last_update", timestamp_iso)
+                
+                logger.info("Calculation request processing finished. Exiting.")
+                sys.exit(0)
+        except Exception as e:
+            logger.error(f"Calculation failed: {e}")
+            try:
+                calc_req["status"] = "error"
+                calc_req["error"] = str(e)
+                kv_client.set_value("calc_request", calc_req)
+            except Exception:
+                pass
+            sys.exit(1)
     
     try:
         target_config = json.loads(target_config_raw)

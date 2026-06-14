@@ -108,6 +108,127 @@ export default {
       }
     }
 
+    // 2.5 Handle API Calculate POST
+    if (url.pathname === "/api/calculate" && request.method === "POST") {
+      const isAuth = await isAuthenticated(request, sessionSecret);
+      if (!isAuth) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      if (!env.DATA_KV) {
+        return new Response(JSON.stringify({ error: "KV Storage not configured" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      try {
+        const body = await request.json();
+        const expression = body.expression;
+
+        if (!expression) {
+          return new Response(JSON.stringify({ error: "Expression is required" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        // Validate basic math characters to prevent shell injection/eval risks
+        const safePattern = /^[0-9+\-*\/().\s]+$/;
+        if (!safePattern.test(expression)) {
+          return new Response(JSON.stringify({ error: "Invalid math expression. Only numbers and basic operators (+, -, *, /, parentheses) are allowed." }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        // Set status to pending in KV
+        const calcRequest = {
+          expression: expression,
+          status: "pending",
+          requested_at: Date.now()
+        };
+        await env.DATA_KV.put("calc_request", JSON.stringify(calcRequest));
+
+        // Trigger GitHub Actions
+        if (!env.GITHUB_OWNER || !env.GITHUB_REPO || !env.GITHUB_PAT) {
+          return new Response(JSON.stringify({ 
+            success: true, 
+            localOnly: true,
+            message: "Request saved to KV. GitHub integration not configured, please run local job to process." 
+          }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+        const ghRes = await fetch(`https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/actions/workflows/run.yml/dispatches`, {
+          method: "POST",
+          headers: {
+            "Authorization": `token ${env.GITHUB_PAT}`,
+            "Accept": "application/vnd.github.v3+json",
+            "User-Agent": "Cloudflare-Worker-Dashboard",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ ref: "main" })
+        });
+
+        if (ghRes.status === 204) {
+          return new Response(JSON.stringify({ 
+            success: true, 
+            message: "Calculation queued! GitHub Actions has been triggered to process the calculation." 
+          }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        } else {
+          const errMsg = await ghRes.text();
+          return new Response(JSON.stringify({ error: `GitHub API error (${ghRes.status}): ${errMsg}` }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" }
+          });
+        }
+
+      } catch (e) {
+        return new Response(JSON.stringify({ error: `Exception: ${e.message}` }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+    }
+
+    // 2.6 Handle API Status GET
+    if (url.pathname === "/api/status" && request.method === "GET") {
+      const isAuth = await isAuthenticated(request, sessionSecret);
+      if (!isAuth) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      if (!env.DATA_KV) {
+        return new Response(JSON.stringify({ error: "KV Storage not configured" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      const calcRequestRaw = await env.DATA_KV.get("calc_request");
+      const calcResultRaw = await env.DATA_KV.get("calc_result");
+
+      return new Response(JSON.stringify({
+        request: calcRequestRaw ? JSON.parse(calcRequestRaw) : null,
+        result: calcResultRaw ? JSON.parse(calcResultRaw) : null
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     // 3. Handle API Trigger POST (GitHub dispatch)
     if (url.pathname === "/api/trigger" && request.method === "POST") {
       const isAuth = await isAuthenticated(request, sessionSecret);
@@ -1157,6 +1278,46 @@ function serveDashboardPage(latest, history, lastUpdate, hasGithub, ghOwner, ghR
           </div>
         </div>
       </div>
+      
+      <!-- Secure Cloud Calculator (GitHub Actions Brain) -->
+      <div class="glass-card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+        <h3 style="font-size: 15px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <svg style="width:18px;height:18px;color:var(--color-primary);stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/>
+          </svg>
+          GitHub Actions Calculator (The Brain)
+        </h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <input type="text" id="calc-expression" placeholder="เช่น 12 * (34 - 5) + 6" style="width: 100%; padding: 12px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 8px; color: #fff; font-family: monospace; font-size: 15px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--color-primary)'" onblur="this.style.borderColor='var(--border-color)'">
+          
+          <button class="btn-primary" id="btn-calculate" onclick="requestCalculation()" style="width: 100%; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;">
+            <svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Compute on GitHub Actions
+          </button>
+        </div>
+
+        <div id="calc-status-area" style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; font-size: 13px; line-height: 1.6; display: none;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="color: var(--text-secondary);">สถานะประมวลผล:</span>
+            <span id="calc-status-badge" style="font-weight: 700; color: var(--color-warning);">Idle</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="color: var(--text-secondary);">สูตรคำนวณล่าสุด:</span>
+            <span id="calc-expr-display" style="font-family: monospace; font-weight: 600; color: #fff;">-</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+            <span style="color: var(--text-secondary);">ผลลัพธ์คำนวณ:</span>
+            <span id="calc-result-display" style="font-family: monospace; font-weight: 700; color: var(--color-success); font-size: 15px;">-</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-secondary);">เวลาประมวลผล (Actions):</span>
+            <span id="calc-time-display" style="font-family: monospace; font-weight: 600; color: #fff;">-</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- GitHub Trigger Section -->
@@ -1293,6 +1454,147 @@ function serveDashboardPage(latest, history, lastUpdate, hasGithub, ghOwner, ghR
         btn.innerHTML = originalText;
       }
     }
+
+    let pollInterval = null;
+
+    async function requestCalculation() {
+      const exprInput = document.getElementById("calc-expression");
+      const btn = document.getElementById("btn-calculate");
+      const statusArea = document.getElementById("calc-status-area");
+      const statusBadge = document.getElementById("calc-status-badge");
+      const exprDisplay = document.getElementById("calc-expr-display");
+      const resultDisplay = document.getElementById("calc-result-display");
+      const timeDisplay = document.getElementById("calc-time-display");
+
+      const expression = exprInput.value.trim();
+      if (!expression) {
+        showToast("กรุณากรอกสูตรคำนวณ", true);
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = "Queuing to GitHub...";
+      btn.style.opacity = "0.7";
+
+      try {
+        const res = await fetch("/api/calculate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ expression: expression })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showToast(data.message || "ส่งคำขอสำเร็จ!");
+          statusArea.style.display = "block";
+          statusBadge.textContent = "QUEUED (Running GitHub Actions...)";
+          statusBadge.style.color = "var(--color-warning)";
+          exprDisplay.textContent = expression;
+          resultDisplay.textContent = "กำลังคำนวณ...";
+          timeDisplay.textContent = "กำลังดึงเวลา...";
+          
+          startPollingStatus();
+        } else {
+          showToast(data.error || "เกิดข้อผิดพลาดในการส่งคำขอ", true);
+          btn.disabled = false;
+          btn.style.opacity = "1";
+          btn.innerHTML = `<svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Compute on GitHub Actions`;
+        }
+      } catch (err) {
+        showToast("เกิดข้อผิดพลาด: " + err.message, true);
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.innerHTML = `<svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Compute on GitHub Actions`;
+      }
+    }
+
+    function startPollingStatus() {
+      if (pollInterval) clearInterval(pollInterval);
+      
+      pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch("/api/status");
+          const data = await res.json();
+
+          if (res.ok && data.request) {
+            const req = data.request;
+            const statusBadge = document.getElementById("calc-status-badge");
+            const resultDisplay = document.getElementById("calc-result-display");
+            const timeDisplay = document.getElementById("calc-time-display");
+            const btn = document.getElementById("btn-calculate");
+
+            if (req.status === "completed") {
+              clearInterval(pollInterval);
+              statusBadge.textContent = "COMPLETED";
+              statusBadge.style.color = "var(--color-success)";
+              
+              if (data.result) {
+                resultDisplay.textContent = data.result.result;
+                timeDisplay.textContent = data.result.thai_time;
+              }
+              
+              btn.disabled = false;
+              btn.style.opacity = "1";
+              btn.innerHTML = `<svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Compute on GitHub Actions`;
+              showToast("คำนวณสำเร็จโดย GitHub Actions!");
+            } else if (req.status === "error") {
+              clearInterval(pollInterval);
+              statusBadge.textContent = "ERROR";
+              statusBadge.style.color = "var(--color-error)";
+              resultDisplay.textContent = req.error || "เกิดข้อผิดพลาดในการคำนวณ";
+              
+              btn.disabled = false;
+              btn.style.opacity = "1";
+              btn.innerHTML = `<svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Compute on GitHub Actions`;
+              showToast("การคำนวณล้มเหลว", true);
+            }
+          }
+        } catch (e) {
+          console.error("Error polling status:", e);
+        }
+      }, 3000);
+    }
+    
+    async function checkInitialStatus() {
+      try {
+        const res = await fetch("/api/status");
+        const data = await res.json();
+        if (res.ok && data.request) {
+          const req = data.request;
+          const statusArea = document.getElementById("calc-status-area");
+          const statusBadge = document.getElementById("calc-status-badge");
+          const exprDisplay = document.getElementById("calc-expr-display");
+          const resultDisplay = document.getElementById("calc-result-display");
+          const timeDisplay = document.getElementById("calc-time-display");
+
+          statusArea.style.display = "block";
+          exprDisplay.textContent = req.expression;
+
+          if (req.status === "pending") {
+            statusBadge.textContent = "QUEUED (Running GitHub Actions...)";
+            statusBadge.style.color = "var(--color-warning)";
+            resultDisplay.textContent = "กำลังคำนวณ...";
+            timeDisplay.textContent = "กำลังดึงเวลา...";
+            document.getElementById("btn-calculate").disabled = true;
+            document.getElementById("btn-calculate").style.opacity = "0.7";
+            document.getElementById("btn-calculate").innerHTML = "Queuing to GitHub...";
+            startPollingStatus();
+          } else if (req.status === "completed" && data.result) {
+            statusBadge.textContent = "COMPLETED";
+            statusBadge.style.color = "var(--color-success)";
+            resultDisplay.textContent = data.result.result;
+            timeDisplay.textContent = data.result.thai_time;
+          } else if (req.status === "error") {
+            statusBadge.textContent = "ERROR";
+            statusBadge.style.color = "var(--color-error)";
+            resultDisplay.textContent = req.error || "คำนวณล้มเหลว";
+          }
+        }
+      } catch (e) {
+        console.error("Error checking initial status:", e);
+      }
+    }
+    window.addEventListener("load", checkInitialStatus);
   </script>
 </body>
 </html>`;
