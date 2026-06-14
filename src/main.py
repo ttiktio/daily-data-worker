@@ -277,9 +277,15 @@ def run_job_iteration(kv_client, target_url, target_config):
         
         logger.info(f"Received response: Status {response_code}, Size {content_length} bytes in {duration_ms}ms")
         
+        # Simulated news severity for testing
+        import random
+        severity_levels = ["Low", "Medium", "High", "Critical"]
+        news_severity = random.choice(severity_levels)
+        
         extracted_data = {
             "server": response.headers.get("Server", "Unknown"),
             "content_type": response.headers.get("Content-Type", "Unknown"),
+            "news_severity": news_severity
         }
         
         if response_code >= 400:
