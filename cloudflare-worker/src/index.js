@@ -8,6 +8,42 @@ export default {
     const sessionSecret = env.SESSION_SECRET || "default_session_secret_change_in_prod";
     const passwordHash = env.PASSWORD_HASH || "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"; // default hash of "admin"
 
+    // 0. Handle local KV development API (only allowed for localhost or when token is matched)
+    if (url.pathname.startsWith("/api/kv/")) {
+      const key = url.pathname.substring("/api/kv/".length);
+      if (!key) {
+        return new Response("Key required", { status: 400 });
+      }
+
+      const isLocal = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+      const authHeader = request.headers.get("Authorization");
+      const hasLocalToken = authHeader && authHeader === `Bearer ${sessionSecret}`;
+
+      if (!isLocal && !hasLocalToken) {
+        return new Response("Unauthorized KV API access", { status: 401 });
+      }
+
+      if (request.method === "GET") {
+        if (!env.DATA_KV) {
+          return new Response("DATA_KV namespace not bound", { status: 500 });
+        }
+        const value = await env.DATA_KV.get(key);
+        if (value === null) {
+          return new Response("Not found", { status: 404 });
+        }
+        return new Response(value, { status: 200 });
+      } else if (request.method === "PUT") {
+        if (!env.DATA_KV) {
+          return new Response("DATA_KV namespace not bound", { status: 500 });
+        }
+        const value = await request.text();
+        await env.DATA_KV.put(key, value);
+        return new Response("OK", { status: 200 });
+      } else {
+        return new Response("Method not allowed", { status: 405 });
+      }
+    }
+
     // 1. Handle Logout
     if (url.pathname === "/logout") {
       return new Response("", {
