@@ -490,8 +490,8 @@ def main():
             logger.info("Found custom worker script. Executing dynamically...")
             try:
                 local_scope = {}
-                # Execute script in restricted scope
-                exec(worker_script, globals(), local_scope)
+                # Execute script in its own global scope
+                exec(worker_script, local_scope)
                 if "run" in local_scope:
                     local_scope["run"](kv_client, logger)
                     logger.info("Custom worker script executed successfully.")
