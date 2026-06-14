@@ -1498,13 +1498,13 @@ function serveDashboardPage(latest, history, lastUpdate, hasGithub, ghOwner, ghR
           showToast(data.error || "เกิดข้อผิดพลาดในการส่งคำขอ", true);
           btn.disabled = false;
           btn.style.opacity = "1";
-          btn.innerHTML = `<svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Compute on GitHub Actions`;
+          btn.innerHTML = '<svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Compute on GitHub Actions';
         }
       } catch (err) {
         showToast("เกิดข้อผิดพลาด: " + err.message, true);
         btn.disabled = false;
         btn.style.opacity = "1";
-        btn.innerHTML = `<svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Compute on GitHub Actions`;
+        btn.innerHTML = '<svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Compute on GitHub Actions';
       }
     }
 
@@ -1535,7 +1535,7 @@ function serveDashboardPage(latest, history, lastUpdate, hasGithub, ghOwner, ghR
               
               btn.disabled = false;
               btn.style.opacity = "1";
-              btn.innerHTML = `<svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Compute on GitHub Actions`;
+              btn.innerHTML = '<svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Compute on GitHub Actions';
               showToast("คำนวณสำเร็จโดย GitHub Actions!");
             } else if (req.status === "error") {
               clearInterval(pollInterval);
@@ -1545,7 +1545,7 @@ function serveDashboardPage(latest, history, lastUpdate, hasGithub, ghOwner, ghR
               
               btn.disabled = false;
               btn.style.opacity = "1";
-              btn.innerHTML = `<svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Compute on GitHub Actions`;
+              btn.innerHTML = '<svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Compute on GitHub Actions';
               showToast("การคำนวณล้มเหลว", true);
             }
           }
