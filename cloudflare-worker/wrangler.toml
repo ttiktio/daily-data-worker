@@ -9,7 +9,8 @@ id = "6efdd5545c9b43ef9160d55c271d8829"
 
 [vars]
 # Optional GitHub Trigger Configurations
-GITHUB_OWNER = ""
-GITHUB_REPO = ""
+GITHUB_OWNER = "ttiktio"
+GITHUB_REPO = "daily-data-worker"
 # GITHUB_PAT should be set via secret: `wrangler secret put GITHUB_PAT`
+
 
