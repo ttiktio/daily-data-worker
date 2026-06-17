@@ -1,9 +1,9 @@
 name: Scheduled Data Sync Worker
 
 on:
-  schedule:
-    # Run every 5 hours to maintain continuous coverage
-    - cron: '0 */5 * * *'
+#  schedule:
+#    # Run every 5 hours to maintain continuous coverage
+#    - cron: '0 */5 * * *'
   workflow_dispatch:
     # Allows manual trigger from the GitHub Actions tab
 
@@ -11,7 +11,7 @@ jobs:
   run-sync:
     name: Execute Data Sync
     runs-on: ubuntu-latest
-    timeout-minutes: 360 # Run for up to 6 hours to cover the 5.5-hour execution loop
+    timeout-minutes: 5 # Reduced timeout for safety
 
     steps:
       - name: Checkout repository

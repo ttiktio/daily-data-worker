@@ -466,8 +466,8 @@ def main():
     # Set default interval to 120 seconds (2 minutes)
     interval_seconds = int(os.getenv("RUN_INTERVAL_SECONDS", "120"))
     
-    # Set default runtime to 5 hours and 30 minutes to match GitHub Actions timeout
-    duration_limit = timedelta(hours=5, minutes=30)
+    # Set default runtime to 1 second as requested by the user
+    duration_limit = timedelta(seconds=1)
     start_time = datetime.now(timezone.utc)
     end_time = start_time + duration_limit
     
